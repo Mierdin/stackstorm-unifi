@@ -1,0 +1,23 @@
+---
+  class_name: "ClientWatchSensor"
+  entry_point: "client_watch.py"
+  description: "Sensor that watches for an explicitly declared list of clients to go online or offline"
+  enabled: yes
+  trigger_types:
+    -
+      name: "ClientOffline"
+      description: "A client has gone online"
+      payload_schema:
+        type: "object"
+        properties:
+          client:
+            type: "object"
+
+    -
+      name: "ClientOnline"
+      description: "A client has come online"
+      payload_schema:
+        type: "object"
+        properties:
+          client:
+            type: "object"

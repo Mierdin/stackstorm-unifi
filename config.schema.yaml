@@ -1,0 +1,38 @@
+---
+hostname:
+  description: "Unifi hostname"
+  type: "string"
+  required: true
+
+port:
+  description: "Unifi port"
+  type: "integer"
+  required: true
+
+username:
+  description: "Unifi username"
+  type: "string"
+  required: true
+
+password:
+  description: "Unifi password"
+  type: "string"
+  required: true
+  secret: true
+
+clients_to_watch:
+  description: "A list of clients to monitor"
+  required: true
+  type: "array"
+  items:
+    type: "object"
+    required: true
+    properties:
+      mac:
+        description: "Client's mac address"
+        type: "string"
+        required: true
+      alias:
+        description: "Human-readable name for this client (for better logging/debugging)"
+        type: "string"
+        required: true

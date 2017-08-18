@@ -1,0 +1,6 @@
+---
+name: unifi
+description: A pack for integrating with the Unifi controller software
+version: 0.1.0
+author: mierdin
+email: info@stackstorm.com
