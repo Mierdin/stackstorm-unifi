@@ -6,8 +6,7 @@ import time
 
 from st2reactor.sensor.base import PollingSensor
 
-TRIGGER_DEVICE_ONLINE = 'unifi.ClientOnline'
-TRIGGER_DEVICE_OFFLINE = 'unifi.ClientOffline'
+TRIGGER_CLIENT_CHANGE = 'unifi.ClientChange'
 
 
 class ClientWatchSensor(PollingSensor):
@@ -53,13 +52,20 @@ class ClientWatchSensor(PollingSensor):
 
     def poll(self):
         clients = self._get_clients()
+
+        # TODO(mierdin) Need to do some testing using some clients that
+        # both are and aren't being watched, that came online AFTER
+        # this sensor was started
         for client in clients:
 
             this_mac = client.get('mac')
+            alias = self._get_alias(this_mac)
 
             if this_mac in [wc.get('mac') for wc in self.clients_to_watch]:
 
-                watch_alias = self.clients_to_watch.get('alias')
+                # TODO (mierdin): Get alias out of list and augment below logging
+                # OR just scrap the whole idea, I mean we DO have hostname (though
+                # not always reliable)
 
                 if this_mac not in self.last_client_storage:
 
@@ -74,7 +80,7 @@ class ClientWatchSensor(PollingSensor):
                     self._logger.debug(
                         "Client %s (%s) updated uptime from %s to %s - ONLINE" % (
                             this_mac,
-                            watch_alias,
+                            alias,
                             self.last_client_storage[this_mac]['uptime'],
                             client.get('uptime')
                         )
@@ -84,30 +90,30 @@ class ClientWatchSensor(PollingSensor):
                     self._logger.debug(
                         "Client %s (%s) uptime remained the same: %s to %s - OFFLINE" % (
                             this_mac,
-                            watch_alias,
+                            alias,
                             self.last_client_storage[this_mac]['uptime'],
                             client.get('uptime')
                         )
                     )
                     online = False
 
-                # Based on current and last status, determine if client is
-                # undergoing a transition
-                #
                 # If the 'online' key is not defined in this dict, it means we only have an initial
                 # record for this client, so we don't have enough info to make a comparison yet.
                 if 'online' in self.last_client_storage[this_mac]:
-                    if self.last_client_storage[this_mac]['online'] and not online:
-                        self._logger.info("Client %s went offline" % this_mac)
+
+                    # Based on current and last status, determine if client is
+                    # undergoing a transition
+                    last_online_status = self.last_client_storage[this_mac]['online']
+                    if last_online_status != online:
+                        self._logger.info("New client %s online status: %s" % (this_mac, online))
+                        payload = {
+                            "alias": alias,
+                            "online": online,
+                            "client_info": client
+                        }
                         self._sensor_service.dispatch(
-                            trigger=TRIGGER_DEVICE_OFFLINE,
-                            payload=client
-                        )
-                    elif not self.last_client_storage[this_mac]['online'] and online:
-                        self._logger.info("Client %s came online" % this_mac)
-                        self._sensor_service.dispatch(
-                            trigger=TRIGGER_DEVICE_ONLINE,
-                            payload=client
+                            trigger=TRIGGER_CLIENT_CHANGE,
+                            payload=payload
                         )
 
                 self.last_client_storage[this_mac] = {
@@ -143,6 +149,11 @@ class ClientWatchSensor(PollingSensor):
         clients = clients_resp.json()['data']
 
         return clients
+
+    def _get_alias(self, mac):
+        for watched_client in self.clients_to_watch:
+            if watched_client.get('mac') == mac:
+                return watched_client.get('alias')
 
     def cleanup(self):
         # This is called when the st2 system goes down. You can perform cleanup operations like

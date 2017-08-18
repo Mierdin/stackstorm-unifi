@@ -1,0 +1,24 @@
+---
+name: "notify_client_change"
+pack: "unifi"
+enabled: true
+description: "Notify slack about a client joining or leaving the network"
+
+trigger:
+  type: "unifi.ClientChange"
+  parameters: {}
+
+criteria: {}
+
+action:
+  ref: slack.post_message
+  parameters:
+    message: |
+      Client {{ trigger.client_info.mac }} ({{ trigger.alias }}) changed status: 
+        {%- if trigger.online -%}
+          ONLINE
+        {%- else %}
+          OFFLINE
+        {%- endif %}
+
+    channel: "@mierdin"

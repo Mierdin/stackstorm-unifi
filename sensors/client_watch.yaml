@@ -5,19 +5,17 @@
   enabled: yes
   trigger_types:
     -
-      name: "ClientOffline"
-      description: "A client has gone online"
+      name: "ClientChange"
+      description: "A client has either come online or gone offline from the network"
       payload_schema:
         type: "object"
         properties:
-          client:
-            type: "object"
-
-    -
-      name: "ClientOnline"
-      description: "A client has come online"
-      payload_schema:
-        type: "object"
-        properties:
-          client:
+          alias:
+            description: Alias for the client that changed status (provided in pack config)
+            type: "string"
+          online:
+            description: True if the client is currently online. False if not
+            type: "boolean"
+          client_info:
+            description: Dictionary containing detailed info returned from API about this client
             type: "object"
